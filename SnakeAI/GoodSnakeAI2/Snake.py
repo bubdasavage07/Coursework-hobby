@@ -11,7 +11,7 @@ class Snake:
             layers = config.hidden_layers
 
         self.score = 1
-        self.lifeLeft = 200
+        self.lifeLeft = 0
         self.lifetime = 0
         self.xVel = 0
         self.yVel = 0
@@ -46,6 +46,7 @@ class Snake:
             self.body.append(Vec2(800, (config.HEIGHT / 2) + config.SIZE))
             self.body.append(Vec2(800, (config.HEIGHT / 2) + (2 * config.SIZE)))
             self.score += 2
+        self.lifeLeft = self.startingLifeLeft()
         self.uniqueCellsVisited.add((self.head.x, self.head.y))
         self.bestDistanceToFood = self.foodDistance()
 
@@ -53,7 +54,7 @@ class Snake:
     def from_foods(cls, foods):
         s = cls.__new__(cls)
         s.score = 1
-        s.lifeLeft = 200
+        s.lifeLeft = 0
         s.lifetime = 0
         s.xVel = 0
         s.yVel = 0
@@ -77,6 +78,7 @@ class Snake:
         s.body.append(Vec2(800, (config.HEIGHT / 2) + config.SIZE))
         s.body.append(Vec2(800, (config.HEIGHT / 2) + (2 * config.SIZE)))
         s.score += 2
+        s.lifeLeft = s.startingLifeLeft()
         s.uniqueCellsVisited.add((s.head.x, s.head.y))
         s.bestDistanceToFood = s.foodDistance()
         return s
@@ -131,11 +133,7 @@ class Snake:
         self.score += 1
         self.stepsSinceFood = 0
         if not config.humanPlaying and not config.modelLoaded:
-            if self.lifeLeft < 500:
-                if self.lifeLeft > 400:
-                    self.lifeLeft = 500
-                else:
-                    self.lifeLeft += 100
+            self.lifeLeft = min(self.lifeCap(), self.lifeLeft + self.foodLifeReward())
         if length >= 0:
             self.body.append(Vec2(self.body[length].x, self.body[length].y))
         else:
@@ -210,6 +208,24 @@ class Snake:
 
     def foodDistance(self):
         return abs(self.head.x - self.food.pos.x) + abs(self.head.y - self.food.pos.y)
+
+    def boardCells(self):
+        return config.GRID_W * config.GRID_H
+
+    def freeCells(self):
+        return max(1, self.boardCells() - (len(self.body) + 1))
+
+    def lifeCap(self):
+        free_cells = self.freeCells()
+        board_cells = self.boardCells()
+        dynamic_cap = int((free_cells * 1.35) + 120)
+        return min(board_cells * 2, max(320, dynamic_cap))
+
+    def startingLifeLeft(self):
+        return min(self.lifeCap(), max(240, int(self.lifeCap() * 0.35)))
+
+    def foodLifeReward(self):
+        return max(140, int(self.freeCells() * 0.32))
 
     def look(self):
         self.vision = [0.0 for _ in range(24)]
