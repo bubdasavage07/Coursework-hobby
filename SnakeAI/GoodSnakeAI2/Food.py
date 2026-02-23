@@ -1,6 +1,6 @@
 import random
 import pygame
-import CyberSecurity_classes.GoodSnakeAI2.config
+import config
 from vec2 import Vec2
 
 
