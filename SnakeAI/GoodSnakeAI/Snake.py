@@ -106,6 +106,9 @@ class Snake:
                 self.dead = True
             elif self.bodyCollide(self.head.x, self.head.y):
                 self.dead = True
+            elif (len(self.body) + 1) >= (config.GRID_W * config.GRID_H):
+                # Grid fully occupied by the snake.
+                self.dead = True
             elif self.lifeLeft <= 0 and not config.humanPlaying:
                 self.dead = True
 
@@ -131,6 +134,13 @@ class Snake:
         else:
             if self.foodItterate < len(self.foodList):
                 self.food = self.foodList[self.foodItterate]
+                self.foodItterate += 1
+            else:
+                # If replay runs out of recorded food, continue with fresh spawns.
+                self.food = Food()
+                while self.bodyCollide(self.food.pos.x, self.food.pos.y):
+                    self.food = Food()
+                self.foodList.append(self.food)
                 self.foodItterate += 1
 
     def shiftBody(self):
