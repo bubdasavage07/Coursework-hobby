@@ -151,10 +151,17 @@ def main():
     clock = pygame.time.Clock()
 
     font_path = os.path.join(os.path.dirname(__file__), "data", "agencyfb-bold.ttf")
-    font = pygame.font.Font(font_path, 32)
-    font_small = pygame.font.Font(font_path, 20)
-    font_mid = pygame.font.Font(font_path, 25)
-    font_tiny = pygame.font.Font(font_path, 15)
+    if os.path.exists(font_path):
+        font = pygame.font.Font(font_path, 32)
+        font_small = pygame.font.Font(font_path, 20)
+        font_mid = pygame.font.Font(font_path, 25)
+        font_tiny = pygame.font.Font(font_path, 15)
+    else:
+        # Fallback to a default system font if the bundled font is missing.
+        font = pygame.font.Font(None, 32)
+        font_small = pygame.font.Font(None, 20)
+        font_mid = pygame.font.Font(None, 25)
+        font_tiny = pygame.font.Font(None, 15)
 
     evolution = []
     highscore = 0
