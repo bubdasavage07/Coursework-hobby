@@ -1,6 +1,7 @@
 import csv
 import os
 import sys
+import subprocess
 import pygame
 
 import config
@@ -11,8 +12,7 @@ from Population import Population
 from Snake import Snake
 
 
-def default
-lt_model_path():
+def default_model_path():
     return os.path.join(os.path.dirname(__file__), "data", "snake_model.csv")
 
 
@@ -145,6 +145,32 @@ def seed_population_from_weights(pop, weights):
         pop.snakes[i] = child
 
 
+def run_smoke_test():
+    script_path = os.path.join(os.path.dirname(__file__), "headless_smoke_test.py")
+    if not os.path.exists(script_path):
+        print("Smoke test script not found:", script_path)
+        return
+    print("Running smoke test...")
+    try:
+        result = subprocess.run(
+            [sys.executable, script_path, "--gens", "20", "--pop-size", "120", "--max-steps", "7000"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except Exception as exc:
+        print("Smoke test failed to start:", exc)
+        return
+    if result.stdout:
+        print(result.stdout.strip())
+    if result.stderr:
+        print(result.stderr.strip())
+    if result.returncode == 0:
+        print("Smoke test finished: PASS")
+    else:
+        print("Smoke test finished: FAIL")
+
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode((config.WIDTH, config.HEIGHT))
@@ -158,7 +184,6 @@ def main():
         font_mid = pygame.font.Font(font_path, 25)
         font_tiny = pygame.font.Font(font_path, 15)
     else:
-        # Fallback to a default system font if the bundled font is missing.
         font = pygame.font.Font(None, 32)
         font_small = pygame.font.Font(None, 20)
         font_mid = pygame.font.Font(None, 25)
@@ -170,6 +195,7 @@ def main():
     graphButton = Button(349, 15, 100, 30, "Graph")
     loadButton = Button(249, 15, 100, 30, "Load")
     saveButton = Button(149, 15, 100, 30, "Save")
+    testButton = Button(49, 15, 100, 30, "Test")
     increaseMut = Button(340, 85, 20, 20, "+")
     decreaseMut = Button(365, 85, 20, 20, "-")
 
@@ -226,6 +252,8 @@ def main():
                         if path:
                             save_model(path, pop, evolution)
                             print("Saved model to:", path)
+                if testButton.collide(mx, my):
+                    run_smoke_test()
                 if increaseMut.collide(mx, my):
                     config.mutationRate *= 2
                     config.defaultmutation = config.mutationRate
@@ -233,6 +261,8 @@ def main():
                     config.mutationRate /= 2
                     config.defaultmutation = config.mutationRate
             elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_t:
+                    run_smoke_test()
                 if config.humanPlaying and snake is not None:
                     if event.key == pygame.K_UP:
                         snake.moveUp()
@@ -293,6 +323,7 @@ def main():
             graphButton.show(screen, font_small)
             loadButton.show(screen, font_small)
             saveButton.show(screen, font_small)
+            testButton.show(screen, font_small)
 
         graph_rect = (config.PANEL_W + 20, 20, 900, 600)
         graph.draw(screen, evolution, graph_rect, font_small, font_tiny)
