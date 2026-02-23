@@ -1,4 +1,3 @@
-import math
 import pygame
 import config
 from vec2 import Vec2
@@ -17,6 +16,7 @@ class Snake:
         self.xVel = 0
         self.yVel = 0
         self.foodItterate = 0
+        self.stepsSinceFood = 0
 
         self.fitness = 0.0
 
@@ -30,6 +30,7 @@ class Snake:
 
         self.body = []
         self.foodList = None
+        self.recentHeadPositions = []
 
         self.food = Food()
         self.brain = None
@@ -53,6 +54,7 @@ class Snake:
         s.xVel = 0
         s.yVel = 0
         s.foodItterate = 0
+        s.stepsSinceFood = 0
         s.fitness = 0.0
         s.dead = False
         s.replay = True
@@ -61,6 +63,7 @@ class Snake:
         s.head = Vec2(800, config.HEIGHT / 2)
         s.body = []
         s.foodList = []
+        s.recentHeadPositions = []
         for f in foods:
             s.foodList.append(f.clone())
         s.food = s.foodList[s.foodItterate]
@@ -99,9 +102,12 @@ class Snake:
             if not config.humanPlaying and not config.modelLoaded:
                 self.lifetime += 1
                 self.lifeLeft -= 1
+                self.stepsSinceFood += 1
             if self.foodCollide(self.head.x, self.head.y):
                 self.eat()
             self.shiftBody()
+            if not config.humanPlaying and not config.modelLoaded and self.isLooping():
+                self.lifeLeft -= 5
             if self.wallCollide(self.head.x, self.head.y):
                 self.dead = True
             elif self.bodyCollide(self.head.x, self.head.y):
@@ -115,6 +121,7 @@ class Snake:
     def eat(self):
         length = len(self.body) - 1
         self.score += 1
+        self.stepsSinceFood = 0
         if not config.humanPlaying and not config.modelLoaded:
             if self.lifeLeft < 500:
                 if self.lifeLeft > 400:
@@ -143,6 +150,15 @@ class Snake:
                 self.foodList.append(self.food)
                 self.foodItterate += 1
 
+    def isLooping(self):
+        if self.stepsSinceFood < 20:
+            return False
+        if len(self.recentHeadPositions) < 16:
+            return False
+        recent = self.recentHeadPositions[-16:]
+        unique_cells = set(recent)
+        return len(unique_cells) <= 4
+
     def shiftBody(self):
         tempx = self.head.x
         tempy = self.head.y
@@ -155,6 +171,9 @@ class Snake:
             self.body[i].y = tempy
             tempx = temp2x
             tempy = temp2y
+        self.recentHeadPositions.append((self.head.x, self.head.y))
+        if len(self.recentHeadPositions) > 32:
+            self.recentHeadPositions = self.recentHeadPositions[-32:]
 
     def cloneForReplay(self):
         clone = Snake.from_foods(self.foodList)
@@ -175,12 +194,13 @@ class Snake:
         self.brain.mutate(config.mutationRate)
 
     def calculateFitness(self):
-        if self.score < 10:
-            self.fitness = math.floor(self.lifetime * self.lifetime) * pow(2, self.score)
-        else:
-            self.fitness = math.floor(self.lifetime * self.lifetime)
-            self.fitness *= pow(2, 10)
-            self.fitness *= (self.score - 9)
+        apples = max(0, self.score - 3)
+        survival = self.lifetime * self.lifetime
+        growth = (apples * apples) * 5000
+        progress = apples * 2500
+        self.fitness = survival + growth + progress
+        if (len(self.body) + 1) >= (config.GRID_W * config.GRID_H):
+            self.fitness += 1_000_000_000
 
     def look(self):
         self.vision = [0.0 for _ in range(24)]

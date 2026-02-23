@@ -18,6 +18,9 @@ class Population:
         self.bestFitness = 0.0
         self.fitnessSum = 0.0
         self.evolution = evolution
+        self.eliteCount = max(2, int(size * 0.005))
+        self.tournamentSize = max(3, min(9, int(size * 0.005)))
+        self.randomInjectBase = max(1, int(size * 0.005))
 
     def done(self):
         for i in range(len(self.snakes)):
@@ -47,39 +50,84 @@ class Population:
                 self.snakes[i].show(surface)
 
     def setBestSnake(self):
-        maxFit = 0
         maxIndex = 0
-        for i in range(len(self.snakes)):
-            if self.snakes[i].fitness > maxFit:
-                maxFit = self.snakes[i].fitness
+        for i in range(1, len(self.snakes)):
+            current = self.snakes[i]
+            best = self.snakes[maxIndex]
+            if current.score > best.score or (current.score == best.score and current.fitness > best.fitness):
                 maxIndex = i
-        if maxFit > self.bestFitness:
-            self.bestFitness = maxFit
-            self.bestSnake = self.snakes[maxIndex].cloneForReplay()
-            self.bestSnakeScore = self.snakes[maxIndex].score
+
+        candidate = self.snakes[maxIndex]
+        improved = candidate.score > self.bestSnakeScore or (
+            candidate.score == self.bestSnakeScore and candidate.fitness > self.bestFitness
+        )
+        if improved:
+            self.bestFitness = candidate.fitness
+            self.bestSnake = candidate.cloneForReplay()
+            self.bestSnakeScore = candidate.score
+            self.samebest = 0
         else:
+            self.samebest += 1
             self.bestSnake = self.bestSnake.cloneForReplay()
 
     def selectParent(self):
-        rand = random.random() * self.fitnessSum
-        summation = 0
-        for i in range(len(self.snakes)):
-            summation += self.snakes[i].fitness
-            if summation > rand:
-                return self.snakes[i]
-        return self.snakes[0]
+        parent = random.choice(self.snakes)
+        rounds = min(self.tournamentSize, len(self.snakes))
+        for _ in range(rounds - 1):
+            challenger = random.choice(self.snakes)
+            if challenger.fitness > parent.fitness:
+                parent = challenger
+        return parent
+
+    def adaptMutationRate(self):
+        base = max(config.defaultmutation, 0.0001)
+        if self.samebest < 3:
+            factor = 1.0
+        elif self.samebest < 7:
+            factor = 1.35
+        elif self.samebest < 12:
+            factor = 1.9
+        elif self.samebest < 20:
+            factor = 2.8
+        else:
+            factor = 3.8
+        target = min(0.35, base * factor)
+        config.mutationRate = (config.mutationRate * 0.7) + (target * 0.3)
 
     def naturalSelection(self):
         newSnakes = [None for _ in range(len(self.snakes))]
 
         self.setBestSnake()
         self.calculateFitnessSum()
+        self.adaptMutationRate()
+
+        ranked = sorted(self.snakes, key=lambda s: s.fitness, reverse=True)
+        elite_count = min(self.eliteCount, len(self.snakes))
 
         newSnakes[0] = self.bestSnake.clone()
-        for i in range(1, len(self.snakes)):
+
+        for i in range(1, elite_count):
+            newSnakes[i] = ranked[i].clone()
+
+        inject_count = 0
+        if self.samebest >= 8:
+            inject_count = max(self.randomInjectBase, int(len(self.snakes) * 0.03))
+        if self.samebest >= 14:
+            inject_count = max(inject_count, int(len(self.snakes) * 0.08))
+        if self.samebest >= 22:
+            inject_count = max(inject_count, int(len(self.snakes) * 0.16))
+        if self.samebest >= 32:
+            inject_count = max(inject_count, int(len(self.snakes) * 0.25))
+
+        train_until = len(self.snakes) - inject_count
+        for i in range(elite_count, train_until):
             child = self.selectParent().crossover(self.selectParent())
             child.mutate()
             newSnakes[i] = child
+
+        for i in range(train_until, len(self.snakes)):
+            newSnakes[i] = Snake()
+
         self.snakes = list(newSnakes)
         self.evolution.append(self.bestSnakeScore)
         self.gen += 1
