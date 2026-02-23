@@ -11,7 +11,8 @@ from Population import Population
 from Snake import Snake
 
 
-def default_model_path():
+def default
+lt_model_path():
     return os.path.join(os.path.dirname(__file__), "data", "snake_model.csv")
 
 
