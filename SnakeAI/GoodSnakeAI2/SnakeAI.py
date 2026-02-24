@@ -194,6 +194,9 @@ def main():
 
     evolution = []
     highscore = 0
+    base_default_mutation = config.defaultmutation
+    last_best_score = 0
+    stagnation = 0
 
     graphButton = Button(349, 15, 100, 30, "Graph")
     loadButton = Button(249, 15, 100, 30, "Load")
@@ -286,6 +289,14 @@ def main():
                     highscore = pop.bestSnake.score
                     pop.calculateFitness()
                     pop.naturalSelection()
+                    if pop.bestSnakeScore > last_best_score:
+                        last_best_score = pop.bestSnakeScore
+                        stagnation = 0
+                        config.defaultmutation = max(base_default_mutation, config.defaultmutation * 0.9)
+                    else:
+                        stagnation += 1
+                        if stagnation % 8 == 0:
+                            config.defaultmutation = min(0.3, config.defaultmutation * 1.15)
                 else:
                     pop.update()
             else:

@@ -82,7 +82,18 @@ class Population:
         return parent
 
     def adaptMutationRate(self):
-        config.mutationRate = max(config.defaultmutation, 0.0001)
+        base = max(config.defaultmutation, 0.0001)
+        if self.samebest < 8:
+            boost = 1.0
+        elif self.samebest < 16:
+            boost = 1.4
+        elif self.samebest < 28:
+            boost = 2.0
+        elif self.samebest < 40:
+            boost = 2.6
+        else:
+            boost = 3.2
+        config.mutationRate = min(0.6, base * boost)
         if self.samebest < 10:
             self.tournamentSize = 7
         elif self.samebest < 24:

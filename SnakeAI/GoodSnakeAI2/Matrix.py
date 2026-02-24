@@ -54,11 +54,14 @@ class Matrix:
         n = Matrix(self.rows, self.cols)
         for i in range(self.rows):
             for j in range(self.cols):
-                n.matrix[i][j] = self.relu(self.matrix[i][j])
+                n.matrix[i][j] = self.leaky_relu(self.matrix[i][j])
         return n
 
     def relu(self, x):
         return max(0, x)
+
+    def leaky_relu(self, x):
+        return x if x > 0 else 0.01 * x
 
     def mutate(self, mutationRate):
         for i in range(self.rows):

@@ -1,3 +1,4 @@
+import random
 import pygame
 import config
 from vec2 import Vec2
@@ -284,12 +285,12 @@ class Snake:
 
     def think(self):
         self.decision = self.brain.output(self.vision)
-        maxIndex = 0
-        maxVal = 0
-        for i in range(len(self.decision)):
+        maxVal = self.decision[0]
+        for i in range(1, len(self.decision)):
             if self.decision[i] > maxVal:
                 maxVal = self.decision[i]
-                maxIndex = i
+        candidates = [i for i, val in enumerate(self.decision) if val == maxVal]
+        maxIndex = random.choice(candidates) if candidates else 0
 
         if maxIndex == 0:
             self.moveUp()
