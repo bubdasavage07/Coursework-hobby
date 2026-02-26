@@ -9,7 +9,6 @@ class Population:
         for i in range(len(self.snakes)):
             self.snakes[i] = Snake()
         self.bestSnake = self.snakes[0].clone()
-        self.bestSnake.replay = True
 
         self.bestSnakeScore = 0
         self.gen = 0
@@ -58,41 +57,50 @@ class Population:
                 maxIndex = i
 
         candidate = self.snakes[maxIndex]
-        improved = candidate.score > self.bestSnakeScore or (
-            candidate.score == self.bestSnakeScore and candidate.fitness > self.bestFitness
-        )
-        if improved:
+        if candidate.score > self.bestSnakeScore:
             self.bestFitness = candidate.fitness
-            self.bestSnake = candidate.cloneForReplay()
+            self.bestSnake = candidate.clone()
             self.bestSnakeScore = candidate.score
+            self.samebest = 0
+        elif candidate.score == self.bestSnakeScore and candidate.fitness > self.bestFitness:
+            self.bestFitness = candidate.fitness
+            self.bestSnake = candidate.clone()
             self.samebest = 0
         else:
             self.samebest += 1
-            self.bestSnake = self.bestSnake.cloneForReplay()
+            self.bestSnake = self.bestSnake.clone()
 
-    def selectParent(self):
-        parent = random.choice(self.snakes)
-        rounds = min(self.tournamentSize, len(self.snakes))
+    def selectParent(self, pool=None):
+        source = self.snakes if pool is None else pool
+        parent = random.choice(source)
+        rounds = min(self.tournamentSize, len(source))
         for _ in range(rounds - 1):
-            challenger = random.choice(self.snakes)
+            challenger = random.choice(source)
             if challenger.fitness > parent.fitness:
                 parent = challenger
         return parent
 
     def adaptMutationRate(self):
         base = max(config.defaultmutation, 0.0001)
-        if self.samebest < 3:
-            factor = 1.0
-        elif self.samebest < 7:
-            factor = 1.35
-        elif self.samebest < 12:
-            factor = 1.9
-        elif self.samebest < 20:
-            factor = 2.8
+        if self.samebest < 8:
+            boost = 1.0
+        elif self.samebest < 18:
+            boost = 1.35
+        elif self.samebest < 32:
+            boost = 1.9
+        elif self.samebest < 48:
+            boost = 2.5
         else:
-            factor = 3.8
-        target = min(0.35, base * factor)
-        config.mutationRate = (config.mutationRate * 0.7) + (target * 0.3)
+            boost = 3.1
+        config.mutationRate = min(0.45, base * boost)
+        if self.samebest < 10:
+            self.tournamentSize = 9
+        elif self.samebest < 26:
+            self.tournamentSize = 7
+        elif self.samebest < 44:
+            self.tournamentSize = 5
+        else:
+            self.tournamentSize = 4
 
     def naturalSelection(self):
         newSnakes = [None for _ in range(len(self.snakes))]
@@ -103,6 +111,8 @@ class Population:
 
         ranked = sorted(self.snakes, key=lambda s: s.fitness, reverse=True)
         elite_count = min(self.eliteCount, len(self.snakes))
+        parent_pool_size = max(2, int(len(self.snakes) * 0.2))
+        parent_pool = ranked[:parent_pool_size]
 
         newSnakes[0] = self.bestSnake.clone()
 
@@ -110,19 +120,55 @@ class Population:
             newSnakes[i] = ranked[i].clone()
 
         inject_count = 0
-        if self.samebest >= 8:
-            inject_count = max(self.randomInjectBase, int(len(self.snakes) * 0.03))
-        if self.samebest >= 14:
-            inject_count = max(inject_count, int(len(self.snakes) * 0.08))
-        if self.samebest >= 22:
+        if self.samebest >= 10:
+            inject_count = max(self.randomInjectBase, int(len(self.snakes) * 0.02))
+        if self.samebest >= 20:
+            inject_count = max(inject_count, int(len(self.snakes) * 0.05))
+        if self.samebest >= 34:
+            inject_count = max(inject_count, int(len(self.snakes) * 0.1))
+        if self.samebest >= 50:
             inject_count = max(inject_count, int(len(self.snakes) * 0.16))
-        if self.samebest >= 32:
-            inject_count = max(inject_count, int(len(self.snakes) * 0.25))
+        if self.samebest >= 70:
+            inject_count = max(inject_count, int(len(self.snakes) * 0.24))
+        if self.samebest >= 95:
+            inject_count = max(inject_count, int(len(self.snakes) * 0.35))
+
+        best_mutant_count = 0
+        if self.samebest >= 12:
+            best_mutant_count = max(2, int(len(self.snakes) * 0.03))
+        if self.samebest >= 24:
+            best_mutant_count = max(best_mutant_count, int(len(self.snakes) * 0.08))
+        if self.samebest >= 40:
+            best_mutant_count = max(best_mutant_count, int(len(self.snakes) * 0.14))
+        if self.samebest >= 65:
+            best_mutant_count = max(best_mutant_count, int(len(self.snakes) * 0.2))
+
+        total_diversity = inject_count + best_mutant_count
+        max_diversity = max(1, len(self.snakes) - elite_count)
+        if total_diversity > max_diversity:
+            overflow = total_diversity - max_diversity
+            reduce_inject = min(overflow, inject_count)
+            inject_count -= reduce_inject
+            overflow -= reduce_inject
+            if overflow > 0:
+                best_mutant_count = max(0, best_mutant_count - overflow)
 
         train_until = len(self.snakes) - inject_count
-        for i in range(elite_count, train_until):
-            child = self.selectParent().crossover(self.selectParent())
-            child.mutate()
+        breed_until = max(elite_count, train_until - best_mutant_count)
+        for i in range(elite_count, breed_until):
+            if random.random() < 0.2:
+                child = self.selectParent(parent_pool).clone()
+            else:
+                child = self.selectParent(parent_pool).crossover(self.selectParent(parent_pool))
+            if self.samebest >= 12 and random.random() < 0.35:
+                child.brain.mutate(min(0.65, config.mutationRate * 1.35))
+            else:
+                child.mutate()
+            newSnakes[i] = child
+
+        for i in range(breed_until, train_until):
+            child = self.bestSnake.clone()
+            child.brain.mutate(min(0.75, max(config.mutationRate * 1.8, 0.08)))
             newSnakes[i] = child
 
         for i in range(train_until, len(self.snakes)):
@@ -131,6 +177,8 @@ class Population:
         self.snakes = list(newSnakes)
         self.evolution.append(self.bestSnakeScore)
         self.gen += 1
+        if self.samebest > 120:
+            self.samebest = 60
 
     def mutate(self):
         for i in range(1, len(self.snakes)):

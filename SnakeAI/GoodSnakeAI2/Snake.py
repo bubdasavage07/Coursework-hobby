@@ -197,12 +197,12 @@ class Snake:
 
     def calculateFitness(self):
         apples = max(0, self.score - 3)
-        survival = self.lifetime * self.lifetime
-        growth = (apples * apples) * 5000
-        progress = apples * 2500
-        exploration = len(self.uniqueCellsVisited) * 40
-        distance_bonus = max(0, 200 - self.bestDistanceToFood) * 35
-        loop_penalty = max(0, self.stepsSinceFood - 60) * 30
+        survival = self.lifetime * 2
+        growth = (apples * apples) * 6000
+        progress = apples * 3000
+        exploration = len(self.uniqueCellsVisited) * 30
+        distance_bonus = max(0, 200 - self.bestDistanceToFood) * 25
+        loop_penalty = max(0, self.stepsSinceFood - 40) * 40
         self.fitness = survival + growth + progress + exploration + distance_bonus - loop_penalty
         if (len(self.body) + 1) >= (config.GRID_W * config.GRID_H):
             self.fitness += 1_000_000_000

@@ -58,7 +58,10 @@ def load_model(path):
             for name in layer_cols:
                 val = row.get(name, "")
                 if val != "":
-                    layer_vals[name].append(float(val))
+                    try:
+                        layer_vals[name].append(float(val))
+                    except ValueError:
+                        pass
             if graph_col in row and row[graph_col] not in ("", None):
                 try:
                     evolution.append(int(float(row[graph_col])))
@@ -110,21 +113,21 @@ def save_model(path, pop, evolution):
     weights = [w.toArray() for w in model_weights]
 
     max_len = max(len(w) for w in weights)
+    row_count = max(1, max_len, len(evolution))
 
     fieldnames = ["L" + str(i) for i in range(len(weights))] + ["Graph", "MutationRate", "Generation", "BestScore"]
 
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        g = 0
-        for i in range(max_len):
+        for i in range(row_count):
             row = {}
             for j in range(len(weights)):
                 if i < len(weights[j]):
                     row["L" + str(j)] = weights[j][i]
-            if g < len(evolution):
-                row["Graph"] = evolution[g]
-                g += 1
+            if i < len(evolution):
+                row["Graph"] = evolution[i]
             if i == 0:
                 row["MutationRate"] = config.mutationRate
                 row["Generation"] = pop.gen
@@ -191,6 +194,9 @@ def main():
 
     evolution = []
     highscore = 0
+    base_default_mutation = config.defaultmutation
+    last_best_score = 0
+    stagnation = 0
 
     graphButton = Button(349, 15, 100, 30, "Graph")
     loadButton = Button(249, 15, 100, 30, "Load")
@@ -283,6 +289,14 @@ def main():
                     highscore = pop.bestSnake.score
                     pop.calculateFitness()
                     pop.naturalSelection()
+                    if pop.bestSnakeScore > last_best_score:
+                        last_best_score = pop.bestSnakeScore
+                        stagnation = 0
+                        config.defaultmutation = max(base_default_mutation, config.defaultmutation * 0.9)
+                    else:
+                        stagnation += 1
+                        if stagnation % 8 == 0:
+                            config.defaultmutation = min(0.3, config.defaultmutation * 1.15)
                 else:
                     pop.update()
             else:

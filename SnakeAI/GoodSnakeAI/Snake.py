@@ -1,3 +1,4 @@
+import random
 import pygame
 import config
 from vec2 import Vec2
@@ -11,7 +12,7 @@ class Snake:
             layers = config.hidden_layers
 
         self.score = 1
-        self.lifeLeft = 200
+        self.lifeLeft = 0
         self.lifetime = 0
         self.xVel = 0
         self.yVel = 0
@@ -31,8 +32,10 @@ class Snake:
         self.body = []
         self.foodList = None
         self.recentHeadPositions = []
+        self.uniqueCellsVisited = set()
 
         self.food = Food()
+        self.bestDistanceToFood = 0
         self.brain = None
 
         if not config.humanPlaying:
@@ -44,12 +47,15 @@ class Snake:
             self.body.append(Vec2(800, (config.HEIGHT / 2) + config.SIZE))
             self.body.append(Vec2(800, (config.HEIGHT / 2) + (2 * config.SIZE)))
             self.score += 2
+        self.lifeLeft = self.startingLifeLeft()
+        self.uniqueCellsVisited.add((self.head.x, self.head.y))
+        self.bestDistanceToFood = self.foodDistance()
 
     @classmethod
     def from_foods(cls, foods):
         s = cls.__new__(cls)
         s.score = 1
-        s.lifeLeft = 200
+        s.lifeLeft = 0
         s.lifetime = 0
         s.xVel = 0
         s.yVel = 0
@@ -64,6 +70,7 @@ class Snake:
         s.body = []
         s.foodList = []
         s.recentHeadPositions = []
+        s.uniqueCellsVisited = set()
         for f in foods:
             s.foodList.append(f.clone())
         s.food = s.foodList[s.foodItterate]
@@ -72,6 +79,9 @@ class Snake:
         s.body.append(Vec2(800, (config.HEIGHT / 2) + config.SIZE))
         s.body.append(Vec2(800, (config.HEIGHT / 2) + (2 * config.SIZE)))
         s.score += 2
+        s.lifeLeft = s.startingLifeLeft()
+        s.uniqueCellsVisited.add((s.head.x, s.head.y))
+        s.bestDistanceToFood = s.foodDistance()
         return s
 
     def bodyCollide(self, x, y):
@@ -103,8 +113,6 @@ class Snake:
                 self.lifetime += 1
                 self.lifeLeft -= 1
                 self.stepsSinceFood += 1
-            if self.foodCollide(self.head.x, self.head.y):
-                self.eat()
             self.shiftBody()
             if not config.humanPlaying and not config.modelLoaded and self.isLooping():
                 self.lifeLeft -= 5
@@ -112,22 +120,21 @@ class Snake:
                 self.dead = True
             elif self.bodyCollide(self.head.x, self.head.y):
                 self.dead = True
-            elif (len(self.body) + 1) >= (config.GRID_W * config.GRID_H):
-                # Grid fully occupied by the snake.
-                self.dead = True
+            elif self.foodCollide(self.head.x, self.head.y):
+                self.eat()
             elif self.lifeLeft <= 0 and not config.humanPlaying:
                 self.dead = True
+            else:
+                current_distance = self.foodDistance()
+                if current_distance < self.bestDistanceToFood:
+                    self.bestDistanceToFood = current_distance
 
     def eat(self):
         length = len(self.body) - 1
         self.score += 1
         self.stepsSinceFood = 0
         if not config.humanPlaying and not config.modelLoaded:
-            if self.lifeLeft < 500:
-                if self.lifeLeft > 400:
-                    self.lifeLeft = 500
-                else:
-                    self.lifeLeft += 100
+            self.lifeLeft = min(self.lifeCap(), self.lifeLeft + self.foodLifeReward())
         if length >= 0:
             self.body.append(Vec2(self.body[length].x, self.body[length].y))
         else:
@@ -142,13 +149,7 @@ class Snake:
             if self.foodItterate < len(self.foodList):
                 self.food = self.foodList[self.foodItterate]
                 self.foodItterate += 1
-            else:
-                # If replay runs out of recorded food, continue with fresh spawns.
-                self.food = Food()
-                while self.bodyCollide(self.food.pos.x, self.food.pos.y):
-                    self.food = Food()
-                self.foodList.append(self.food)
-                self.foodItterate += 1
+        self.bestDistanceToFood = self.foodDistance()
 
     def isLooping(self):
         if self.stepsSinceFood < 20:
@@ -172,6 +173,7 @@ class Snake:
             tempx = temp2x
             tempy = temp2y
         self.recentHeadPositions.append((self.head.x, self.head.y))
+        self.uniqueCellsVisited.add((self.head.x, self.head.y))
         if len(self.recentHeadPositions) > 32:
             self.recentHeadPositions = self.recentHeadPositions[-32:]
 
@@ -195,12 +197,36 @@ class Snake:
 
     def calculateFitness(self):
         apples = max(0, self.score - 3)
-        survival = self.lifetime * self.lifetime
-        growth = (apples * apples) * 5000
-        progress = apples * 2500
-        self.fitness = survival + growth + progress
+        survival = self.lifetime * 2
+        growth = (apples * apples) * 6000
+        progress = apples * 3000
+        exploration = len(self.uniqueCellsVisited) * 30
+        distance_bonus = max(0, 200 - self.bestDistanceToFood) * 25
+        loop_penalty = max(0, self.stepsSinceFood - 40) * 40
+        self.fitness = survival + growth + progress + exploration + distance_bonus - loop_penalty
         if (len(self.body) + 1) >= (config.GRID_W * config.GRID_H):
             self.fitness += 1_000_000_000
+
+    def foodDistance(self):
+        return abs(self.head.x - self.food.pos.x) + abs(self.head.y - self.food.pos.y)
+
+    def boardCells(self):
+        return config.GRID_W * config.GRID_H
+
+    def freeCells(self):
+        return max(1, self.boardCells() - (len(self.body) + 1))
+
+    def lifeCap(self):
+        free_cells = self.freeCells()
+        board_cells = self.boardCells()
+        dynamic_cap = int((free_cells * 1.35) + 120)
+        return min(board_cells * 2, max(320, dynamic_cap))
+
+    def startingLifeLeft(self):
+        return min(self.lifeCap(), max(240, int(self.lifeCap() * 0.35)))
+
+    def foodLifeReward(self):
+        return max(140, int(self.freeCells() * 0.32))
 
     def look(self):
         self.vision = [0.0 for _ in range(24)]
@@ -259,12 +285,12 @@ class Snake:
 
     def think(self):
         self.decision = self.brain.output(self.vision)
-        maxIndex = 0
-        maxVal = 0
-        for i in range(len(self.decision)):
+        maxVal = self.decision[0]
+        for i in range(1, len(self.decision)):
             if self.decision[i] > maxVal:
                 maxVal = self.decision[i]
-                maxIndex = i
+        candidates = [i for i, val in enumerate(self.decision) if val == maxVal]
+        maxIndex = random.choice(candidates) if candidates else 0
 
         if maxIndex == 0:
             self.moveUp()
