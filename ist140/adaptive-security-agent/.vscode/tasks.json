@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Agent: Guided Run",
+      "type": "shell",
+      "command": "python3 agent.py",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Agent: Dry Run",
+      "type": "shell",
+      "command": "python3 agent.py run --config config.json",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Agent: Live Run",
+      "type": "shell",
+      "command": "python3 agent.py run --config config.json --live",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Agent: Memory Stats",
+      "type": "shell",
+      "command": "python3 agent.py memory-stats --config config.json",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

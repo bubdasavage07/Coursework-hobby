@@ -1,0 +1,63 @@
+{
+  "agent_name": "Sentinel-Authorized",
+  "objective": "Assess authorized external attack surface for owned assets.",
+  "targets": [
+    "example.com"
+  ],
+  "scope_patterns": [
+    "example.com",
+    ".example.com"
+  ],
+  "command_allowlist": [
+    "dig",
+    "nslookup",
+    "curl",
+    "openssl",
+    "nmap",
+    "whois"
+  ],
+  "network_tools_require_scope": [
+    "dig",
+    "nslookup",
+    "curl",
+    "openssl",
+    "nmap",
+    "whois"
+  ],
+  "blocked_command_prefixes": [
+    "rm ",
+    "shutdown",
+    "reboot",
+    "mkfs",
+    "dd ",
+    "iptables",
+    "route "
+  ],
+  "command_templates": [
+    "dig {target} +short",
+    "nslookup {target}",
+    "curl -sSIk https://{target}",
+    "openssl s_client -connect {target}:443 -brief",
+    "nmap -Pn -sV --top-ports 100 {target}"
+  ],
+  "timeout_seconds": 120,
+  "max_iterations": 20,
+  "dry_run": true,
+  "auto_web_research": true,
+  "web_results_limit": 5,
+  "archive_search_limit": 5,
+  "continuous_interval_seconds": 300,
+  "memory_path": "runs/memory.json",
+  "conversation_db_path": "runs/conversation_archive.sqlite3",
+  "conversation_summary_chars": 320,
+  "matrix_enabled": false,
+  "matrix_homeserver": "https://matrix-client.matrix.org",
+  "matrix_room_id": "!yourRoomId:matrix.org",
+  "matrix_access_token": "syt_your_access_token_here",
+  "matrix_timeout_seconds": 15,
+  "matrix_notify_start": true,
+  "matrix_notify_failures": true,
+  "matrix_notify_finish": true,
+  "log_path": "runs/session.jsonl",
+  "report_path": "runs/report.md"
+}
