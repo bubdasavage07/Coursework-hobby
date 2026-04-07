@@ -4,8 +4,7 @@ import random
 #Purpose: Create a cipher using the caesar algorithm with a shift
 # 1. randomly generate an 8 letter password
 # 2. encrypt the password
-# 3. the encrypted password includes a 2 digit value at the front which
-#     equals the shift
+# 3. the encrypted password includes a 2 digit value at the front which equals the shift
 # 4. *** store 5 encrypted passwords into an array - not complete
 
 #the complete lowercase alphabet in string form
