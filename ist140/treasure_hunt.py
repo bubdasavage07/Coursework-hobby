@@ -1,2 +1,2 @@
 
-f = open("demofile.txt")
+f = open("file.txt")
