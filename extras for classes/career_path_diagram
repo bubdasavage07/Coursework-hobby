@@ -1,0 +1,22 @@
+digraph career_path {
+	rankdir=LR
+	A [label="IT Auditor / Associate"]
+	B [label="Senior IT Auditor"]
+	C [label="IT Audit Lead / Manager"]
+	D [label="Director / Head of Tech Audit"]
+	E [label="Enterprise Audit Leadership"]
+	F [label="Cyber GRC / Risk Mgmt"]
+	G [label="Security Leadership Path"]
+	H [label="Privacy / Compliance / Third-Party Risk"]
+	I [label="Cloud / IAM / SDLC Assurance Specialist"]
+	A -> B
+	B -> C
+	C -> D
+	D -> E
+	B -> F
+	C -> F
+	F -> G
+	B -> H
+	C -> I
+	I -> F
+}
