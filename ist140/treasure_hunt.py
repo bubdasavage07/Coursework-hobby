@@ -7,6 +7,7 @@ import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 
 base_dir = Path(__file__).parent
 
@@ -40,4 +41,6 @@ print (numpy_array)
 
 print("--Mean Calculation--")
 x = np.mean(numpy_array)
+y = stats.mode(numpy_array)
 print(x)
+print(y)
