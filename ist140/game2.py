@@ -40,7 +40,7 @@ if gameStart == "y":
         weaponDMG = 8
     elif primaryWeapon == 5:
         weapon = "Fnuke"
-        weaponDMG = -99  # big positive damage so it doesn't heal zombies
+        weaponDMG = -99  
     else:
         weapon = "fists"
         weaponDMG = 1
@@ -51,11 +51,20 @@ if gameStart == "y":
 
     enemyCount = 3
 
+    # Stores the last zombie type so the same zombie does not fight twice in a row (codex)
+    lastZombieType = None
+
     # 4. LOOP (Runs one complete fight for each zombie)
     while enemyCount > 0 and playerHealth > 0:
         # Randomizes the zombie type for this fight
-        # A random choice can repeat, so code can be added here to prevent repeats
         zombieType = random.randrange(1, 5)
+
+        # Keeps choosing until the zombie is different from the last one (codex)
+        while zombieType == lastZombieType:
+            zombieType = random.randrange(1, 5)
+
+        # Saves this zombie type so the next fight can use a different one (codex)
+        lastZombieType = zombieType
 
         if zombieType == 1:
             zombieName = "Spitter zombie"
