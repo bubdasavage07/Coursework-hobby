@@ -51,8 +51,10 @@ if gameStart == "y":
 
     enemyCount = 3
 
+    # 4. LOOP (Runs one complete fight for each zombie)
     while enemyCount > 0 and playerHealth > 0:
-        # Randomize zombie for this fight
+        # Randomizes the zombie type for this fight
+        # A random choice can repeat, so code can be added here to prevent repeats
         zombieType = random.randrange(1, 5)
 
         if zombieType == 1:
