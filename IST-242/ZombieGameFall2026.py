@@ -48,4 +48,5 @@ if player_health <= 0:
     print("\nYou succumbed to your injuries and turned into a zombie!")
 else:
     print("\nVictory! You made it to the safe zone!")
+
 end_game()
