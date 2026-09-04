@@ -8,28 +8,19 @@ def rerollZombie():
 
 def selectZombie(zombieType):
     #Zombie selection code
-    global zombieName, zombieHealth, zombieDMG
-
     if zombieType == 1:
-       zombieName = "Spitter zombie"
-       zombieHealth = 35
-       zombieDMG = 5
+       return "Spitter zombie", 35, 5
         #add DOT effect
         
     elif zombieType == 2:
-        zombieName = "Jeremiah the zombie"
-        zombieHealth = 40
-        zombieDMG = 15
+        return "Jeremiah the zombie", 40, 15
         
     elif zombieType == 3:
-        zombieName = "John Wick's dog"
-        zombieHealth = 6
-        zombieDMG = 50
+        return "John Wick's dog", 6, 50
         
     else:
-        zombieName = "No name zombie"
-        zombieHealth = 20
-        zombieDMG = 10
+        return "No name zombie", 20, 10
+
 #inventory
 #enemy
 
@@ -83,10 +74,9 @@ if gameStart == 'Y' or gameStart == 'y':
     print()
     print("********* Level 1 ************")
     print()
-# randomize zombie selection
-    selectZombie(rerollZombie())   
 # FOR loop to fight 3 zombies
     for enemyCount in range (0,3): 
+        zombieName, zombieHealth, zombieDMG = selectZombie(rerollZombie())
 
         print("Oh no! here comes a " + zombieName)
 
@@ -97,7 +87,6 @@ if gameStart == 'Y' or gameStart == 'y':
             print(zombieName + " 's Health: ", zombieHealth)
             print(playerName + "'s Health: ", playerHealth)
             #add a delay feature for better game visual
-        zombieType=rerollZombie()
 else:
     print("Game Over")
     

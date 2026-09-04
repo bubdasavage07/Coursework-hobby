@@ -83,5 +83,3 @@ print(password)
 password2 = list(password)
 print(password2)
 """
-
-
