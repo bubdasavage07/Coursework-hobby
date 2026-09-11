@@ -9,15 +9,6 @@ def shout_it_out(text):
     return len(shouted_text)
 
 
-def rectangular_border(width, height):
-    """Print and return a rectangle made of stars."""
-    if width <= 0 or height <= 0:
-        raise ValueError("width and height must be greater than zero")
-    border = "\n".join("*" * width for _ in range(height))
-    print(border)
-    return border
-
-
 def first_and_last(word):
     """Return the first and last character of a word."""
     if not word:
@@ -37,7 +28,6 @@ def count_matches(numbers, target):
 
 if __name__ == "__main__":
     shout_it_out("python")
-    rectangular_border(8, 3)
     first, last = first_and_last("computer")
     print(f"First: {first}; Last: {last}")
     print(f"15 is in range 10 through 20: {range_checker(15, 10, 20)}")
