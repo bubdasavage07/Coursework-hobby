@@ -1,0 +1,2 @@
+# pygame-ce exposes the familiar `pygame` import and supports current Python versions.
+pygame-ce>=2.5.0

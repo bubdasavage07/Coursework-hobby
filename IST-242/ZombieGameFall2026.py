@@ -4,6 +4,9 @@ import random
 player_health = 100
 zombies_killed = 0
 level = ["the hospital", "the store", "the armory", "a church", "the bunker"]
+#new suggestions: Level 1: your house, neighbor's house, the store, the streets leading to town
+#Level 2: streets of level 2, the church, the graveyard, small patch of woods
+#Level 3: the hospital (first floor), the ER, the stairs, floor 13
 
 # 2. FUNCTIONS (Function 1: Handles combat choices)
 def fight_zombie():
@@ -37,15 +40,23 @@ def weapon_choice():
         case 0:
             print("fists")
         case 1:
+            print("rusty knife")
+        case 2:            
             print("lead pipe")
-        case 2:
-            print("bat")
         case 3:
-            print("pistol")            
+            print("bat")
         case 4:
+            print("pistol")
+                #requires ammo
+        case 5:
             print("fnuke")            
         case _:
             print("No weapon found")
+
+
+         
+    
+
 
 # MAIN GAME LOOP
 print("Welcome to Zombie Survival!")
@@ -69,6 +80,7 @@ while player_health > 0 and zombies_killed < 3:
         print("Invalid choice. Time passes...")
 #----End of Loop -----
 
+
 # Check final status
 if player_health <= 0:
     print("\nYou succumbed to your injuries and turned into a zombie!")
@@ -80,6 +92,8 @@ if level[4]:
     with open("output.txt", "w") as f:
         f.write("Hello world\n")
         f.write("This adds a new line")
+
+
 
 
 end_game()
