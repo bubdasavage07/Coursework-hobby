@@ -1,6 +1,10 @@
 import random
+import tkinter as tk
+import weapon
 
 # 1. VARIABLES (Global state)
+w1 = weapon.Weapon()
+
 player_health = 100
 zombies_killed = 0
 level = ["the hospital", "the store", "the armory", "a church", "the bunker"]
@@ -33,33 +37,16 @@ def end_game():
     print(f"Zombies defeated: {zombies_killed}")
     print("Thanks for playing!")
 
-def weapon_choice():
-    choice = 0
-    
-    match choice:
-        case 0:
-            print("fists")
-        case 1:
-            print("rusty knife")
-        case 2:            
-            print("lead pipe")
-        case 3:
-            print("bat")
-        case 4:
-            print("pistol")
-                #requires ammo
-        case 5:
-            print("fnuke")            
-        case _:
-            print("No weapon found")
-
-
-         
-    
 
 
 # MAIN GAME LOOP
-print("Welcome to Zombie Survival!")
+#print("Welcome to Zombie Survival!")
+# Create window
+window = tk.Tk()
+window.title("Zombie Survial")
+window.geometry("700x500")
+
+
 
 i = 0
 
@@ -92,8 +79,27 @@ if level[4]:
     with open("output.txt", "w") as f:
         f.write("Hello world\n")
         f.write("This adds a new line")
+        
+button_frame = tk.Frame(window)
+button_frame.pack(pady=20)
 
+click_button = tk.Button(button_frame, text="fists", command=lambda: w1.weapon_choice(0), font=("Chiller", 16), padx=10, pady=5)
+click_button.pack(side="left", padx=5)
 
+click_button = tk.Button(button_frame, text="rusty knife", command=lambda: w1.weapon_choice(1), font=("Chiller", 16), padx=10, pady=5)
+click_button.pack(side="left", padx=5)
 
+click_button = tk.Button(button_frame, text="lead pipe", command=lambda: w1.weapon_choice(2), font=("Chiller", 16), padx=10, pady=5)
+click_button.pack(side="left", padx=5)
 
+click_button = tk.Button(button_frame, text="bat", command=lambda: w1.weapon_choice(3), font=("Chiller", 16), padx=10, pady=5)
+click_button.pack(side="left", padx=5)
+
+click_button = tk.Button(button_frame, text="pistol", command=lambda: w1.weapon_choice(4), font=("Chiller", 16), padx=10, pady=5)
+click_button.pack(side="left", padx=5)
+
+click_button = tk.Button(button_frame, text="fnuke", command=lambda: w1.weapon_choice(5), font=("Chiller", 16), padx=10, pady=5)
+click_button.pack(side="left", padx=5)
+
+window.mainloop()
 end_game()
