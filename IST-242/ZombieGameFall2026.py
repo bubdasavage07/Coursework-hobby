@@ -1,12 +1,17 @@
 import random
 import tkinter as tk
 import weapon
+import player
+
+#Step 0: Create an instance of the Weapon class
+w1 = weapon.Weapon("fists", 5)
+
+#Create an instance of the Player class
+p1 = player.Player()
 
 # 1. VARIABLES (Global state)
-w1 = weapon.Weapon()
-
-player_health = 100
-zombies_killed = 0
+#playerHealth = 100
+#zombieKillCount = 0
 level = ["the hospital", "the store", "the armory", "a church", "the bunker"]
 #new suggestions: Level 1: your house, neighbor's house, the store, the streets leading to town
 #Level 2: streets of level 2, the church, the graveyard, small patch of woods
@@ -14,74 +19,50 @@ level = ["the hospital", "the store", "the armory", "a church", "the bunker"]
 
 # 2. FUNCTIONS (Function 1: Handles combat choices)
 def fight_zombie():
-    global player_health, zombies_killed
-    print("\nA zombie lunges at you!")
-    
-    # 3. SELECTION STATEMENT (Inside function)
-    choice = input("Do you [1] Attack with your bat or [2] Run away? ").strip()
-    
-    if choice == "1":
-        damage_taken = random.randint(10, 30)
-        player_health -= damage_taken
-        zombies_killed += 1
-        print(f"You defeat the zombie but take {damage_taken} damage!")
-    elif choice == "2":
-        print("You safely escape, but the zombie is still out there.")
-    else:
-        print("You hesitate! The zombie bites you for 40 damage.")
-        player_health -= 40
+    p1.playerHealth, p1.zombieKillCount
 
 # 2. FUNCTIONS (Function 2: Displays game ending)
 def end_game():
     print("\n--- GAME OVER ---")
-    print(f"Zombies defeated: {zombies_killed}")
+    print(f"Zombies defeated: {p1.zombieKillCount}")
     print("Thanks for playing!")
-
-
 
 # MAIN GAME LOOP
 #print("Welcome to Zombie Survival!")
 # Create window
 window = tk.Tk()
 window.title("Zombie Survial")
-window.geometry("700x500")
+window.geometry("800x600")
 
 
 
 i = 0
 
 # 4. LOOP(S) (Runs until player dies or kills 3 zombies)
-while player_health > 0 and zombies_killed < 3:
+#while p1.playerHealth > 0 and p1.zombieKillCount < 3:
     
-    print(f"\n[Health: {player_health} | Zombies Defeated: {zombies_killed}/3]")
-    action = input(f"You see a dark alley. Leading to {level[i]}. "
-                   "Do you explore it? (yes/no): ").lower().strip()
-    
-    if action == "yes":
-        fight_zombie()
-        i+=1
-    elif action == "no":
-        print("You walk around the block safely.")
-        i+=1
-    else:
-        print("Invalid choice. Time passes...")
+#    print(f"\n[Health: {p1.playerHealth} | Zombies Defeated: {p1.zombieKillCount}/3]")
 #----End of Loop -----
 
 
 # Check final status
-if player_health <= 0:
+if p1.playerHealth <= 0:
     print("\nYou succumbed to your injuries and turned into a zombie!")
 else:
     print("\nVictory! You made it to the safe zone!")
 
 if level[4]:
     print("Saving your game.")
-    with open("output.txt", "w") as f:
-        f.write("Hello world\n")
-        f.write("This adds a new line")
-        
+    #with open("output.txt", "w") as f:
+        #f.write("Hello world\n")
+        #f.write("This adds a new line")
+
+button_frame = tk.Frame(window, bg="black", width=500, height=300)
+#button_frame.pack(side="bottom", pady=20)
+button_frame.pack(expand=True)
+
 button_frame = tk.Frame(window)
-button_frame.pack(pady=20)
+button_frame.pack(side="bottom", pady=20)
 
 click_button = tk.Button(button_frame, text="fists", command=lambda: w1.weapon_choice(0), font=("Chiller", 16), padx=10, pady=5)
 click_button.pack(side="left", padx=5)

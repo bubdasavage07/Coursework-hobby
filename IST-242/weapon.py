@@ -1,39 +1,38 @@
-#weapon class
+#Weapon class
 class Weapon:
-
-    weaponName = "fist"
-    weaponDMG = 5
+    def __init__(self, weaponName="fists", weaponDMG=5):
+        self.weaponName = weaponName
+        self.weaponDMG = weaponDMG    
     
-    def weapon_choice(choice):
+    def weapon_choice(self, choice):
         match choice:
             case 0:
-                weaponName = "fist"
-                weaponDMG = 5
+                self.weaponName = "fists"
+                self.weaponDMG = 5 
                 print("fists")
             case 1:
-                weaponName = "rusty knife"
-                weaponDMG = 10
+                self.weaponName = "rusty knife"
+                self.weaponDMG = 10 
                 print("rusty knife")
             case 2:
-                weaponName = "lead pipe"
-                weaponDMG = 15     
+                self.weaponName = "lead pipe"
+                self.weaponDMG = 15 
                 print("lead pipe")
             case 3:
-                weaponName = "bat"
-                weaponDMG = 20
+                self.weaponName = "bat"
+                self.weaponDMG = 20 
                 print("bat")
             case 4:
-                weaponName = "pistol"
-                weaponDMG = 25
+                self.weaponName = "pistol"
+                self.weaponDMG = 25 
                 print("pistol")
-                #requires ammo
             case 5:
-                weaponName = "fnuke"
-                weaponDMG = -99
-                print("fnuke")            
+                self.weaponName = "fnuke"
+                self.weaponDMG = -99 
+                print("fnuke")      
             case _:
                 print("No weapon found")
-
+            
 #wep1 = Weapon()
 #print(wep1.weaponName)
-#print(wep1.weaponDMG)
+#print(wep1.weaponDMG)l
