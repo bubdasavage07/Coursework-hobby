@@ -5,6 +5,7 @@ from pygame.locals import *
 # 2. Initialize the game
 pygame.init()
 pygame.mixer.init()
+clock = pygame.time.Clock()
 
 # Set screen window size (slightly taller to make room for a UI bottom panel)
 width, height = 640, 540
@@ -50,8 +51,8 @@ badtimer = 100
 badtimer1 = 0
 badguys = [[640, 100]]
 
-# Get path to images
-cwd = os.getcwd().replace('\\', '/')
+# Get the folder containing this script, so assets load no matter where it is launched from.
+cwd = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
 
 # 3. Load player images and assets
 player_img = pygame.image.load(cwd + "/resources/images/dude.png")
@@ -88,6 +89,7 @@ for i, w in enumerate(weapon_system.weapons):
 running = 1
 exitcode = 0
 while running:
+    clock.tick(120)  # Limit the game to 60 frames per second.
     badtimer -= 1
 
     # 5. Clear the screen before drawing it again
@@ -137,7 +139,7 @@ while running:
         if badguy[0] < -64:
             badguys.remove(badguy)
             continue
-        badguy[0] -= 7
+        badguy[0] -= 3  # Slower enemy movement.
 
         # 6.3.1 Attack castle
         badrect = pygame.Rect(badguyimg.get_rect())
