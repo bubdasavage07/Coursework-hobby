@@ -1,180 +1,239 @@
-"""A small castle-defense game, compatible with modern Python and Pygame."""
+# 1 import libarary
+import pygame, sys, math, os, random
+from pygame.locals import *
 
-from __future__ import annotations
+# 2 initialize the game
+pygame.init()
+pygame.mixer.init()
+clock = pygame.time.Clock()
 
-import math
-import random
-from dataclasses import dataclass
-from pathlib import Path
+# set screen windows size
+width, height = 640, 480
+screen = pygame.display.set_mode((width, height))
 
-import pygame
+# predefine key pressed as false
+keys = [False, False, False, False];
 
-WIDTH, HEIGHT, FPS = 640, 480, 60
-GAME_LENGTH_MS = 90_000
-RESOURCE_DIR = Path(__file__).resolve().parent / "resources"
+# select player position in window
+playerpos = [100, 100];
 
+# shotting arrows variables
+acc = [0, 0];
+arrows = [];
 
-@dataclass
-class Bullet:
-    angle: float
-    x: float
-    y: float
+# Badguys / enemyes
+badtimer = 100;
+badtimer1 = 0;
+badguys = [[640, 100]];
+healthvalue = 194;
 
-    def update(self) -> None:
-        self.x += math.cos(self.angle) * 600 / FPS
-        self.y += math.sin(self.angle) * 600 / FPS
+# get path to images. If windows then replace '\' with '/' from path dir
+cwd = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/');
 
-    @property
-    def off_screen(self) -> bool:
-        return self.x < -64 or self.x > WIDTH or self.y < -64 or self.y > HEIGHT
+# 3 Load player images path to images:
+player = pygame.image.load(cwd + "/resources/images/dude.png");
+grass = pygame.image.load(cwd + "/resources/images/grass.png");
+castle = pygame.image.load(cwd + "/resources/images/castle.png");
+arrow = pygame.image.load(cwd + "/resources/images/bullet.png");
+badguyimg1 = pygame.image.load(cwd + "/resources/images/badguy.png");
+badguyimg = badguyimg1;
+healthbar = pygame.image.load(cwd + "/resources/images/healthbar.png");
+health = pygame.image.load(cwd + "/resources/images/health.png");
+gameover = pygame.image.load(cwd + "/resources/images/gameover.png");
+youwin = pygame.image.load(cwd + "/resources/images/youwin.png");
 
+# 3.1 Load audio
+hit = pygame.mixer.Sound(cwd + "/resources/audio/explode.wav")
+enemy = pygame.mixer.Sound(cwd + "/resources/audio/enemy.wav")
+shoot = pygame.mixer.Sound(cwd + "/resources/audio/shoot.wav")
+hit.set_volume(0.05)
+shoot.set_volume(0.05)
+enemy.set_volume(0.05)
+pygame.mixer.music.load(cwd + "/resources/audio/moonlight.wav")
+pygame.mixer.music.play(-1, 0.0)
+pygame.mixer.music.set_volume(0.25)
 
-@dataclass
-class Enemy:
-    x: float
-    y: float
+# 4 keep looping
+running = 1
+exitcode = 0
+while running:
+    clock.tick(60)
+    badtimer -= 1
 
-    def update(self) -> None:
-        self.x -= 200 / FPS
+    # 5 clear the screen before drawing it again
+    screen.fill(0);
 
+    # 6. Draw the grass tiling across the screen
+    for x in range(width // grass.get_width() + 1):
+        for y in range(height // grass.get_height() + 1):
+            screen.blit(grass, (x * grass.get_width(), y * grass.get_height()))
 
-def load_image(name: str) -> pygame.Surface:
-    """Load an image relative to this file, regardless of the launch directory."""
-    return pygame.image.load(RESOURCE_DIR / name).convert_alpha()
+    # 6a. Draw the castles once per frame (outside the loops)
+    screen.blit(castle, (0, 30))
+    screen.blit(castle, (0, 135))
+    screen.blit(castle, (0, 240))
+    screen.blit(castle, (0, 345))
 
+    # 6.1 set player position and rotation
+    position = pygame.mouse.get_pos()
+    angle = math.atan2(position[1]-(playerpos[1]+32),position[0]-(playerpos[0]+26))
+    playerrot = pygame.transform.rotate(player, 360-angle*57.29)
+    playerpos1 = (playerpos[0]-playerrot.get_rect().width/2,playerpos[1]-playerrot.get_rect().height/2)
+    screen.blit(playerrot, playerpos1)
 
-def load_sound(name: str) -> pygame.mixer.Sound | None:
-    try:
-        return pygame.mixer.Sound(RESOURCE_DIR / name)
-    except pygame.error:
-        return None
+    # 6.2 Draw arrows
+    for bullet in arrows:
+        index = 0
+        velx = math.cos(bullet[0]) * 10
+        vely = math.sin(bullet[0]) * 10
+        bullet[1] += velx
+        bullet[2] += vely
+        if bullet[1] < -64 or bullet[1] > 640 or bullet[2] < -64 or bullet[2] > 480:
+            arrows.pop(index)
+        index += 1
+        for projectile in arrows:
+            arrow1 = pygame.transform.rotate(arrow, 360 - projectile[0] * 57.29)
+            screen.blit(arrow1, (projectile[1], projectile[2]))
 
+    # 6.3 Draw badgers
+    if badtimer == 0:
+        badguys.append([640, random.randint(50, 430)])
+        badtimer = 100 - (badtimer1 * 2)
+        if badtimer1 >= 35:
+            badtimer1 = 35
+        else:
+            badtimer1 += 5
+    index = 0
+    for badguy in badguys:
+        if badguy[0] < -64:
+            badguys.pop(index)
+        badguy[0] -= 7
 
-def play(sound: pygame.mixer.Sound | None) -> None:
-    if sound is not None:
-        sound.play()
+        # 6.3.1 Attack castle
+        badrect = pygame.Rect(badguyimg.get_rect())
+        badrect.top = badguy[1]
+        badrect.left = badguy[0]
+        if badrect.left < 64:
+            hit.play()
+            healthvalue -= random.randint(5, 20)
+            badguys.pop(index)
+        index += 1
 
+    #6.3.2 - Check for collisions
+        index1=0
+        for bullet in arrows:
+            bullrect = pygame.Rect(arrow.get_rect())
+            bullrect.left = bullet[1]
+            bullrect.top = bullet[2]
+            if badrect.colliderect(bullrect):
+                enemy.play()
+                acc[0]+=1
+                badguys.pop(index1)
+                arrows.pop(index1)
+                index1+=1
 
-def main() -> None:
-    pygame.init()
-    try:
-        pygame.mixer.init()
-    except pygame.error:
-        pass  # The game remains playable on systems without an audio device.
+#    # 6.3.3 Next bad guy
+    for badguy in badguys:
+        screen.blit(badguyimg, badguy)
 
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Castle Defense")
-    clock, font = pygame.time.Clock(), pygame.font.Font(None, 24)
+    # 6.4 Draw clock
+    font = pygame.font.Font(None, 24)
+    survivedtext = font.render(str((90000-pygame.time.get_ticks())/60000)+":"+str((90000-pygame.time.get_ticks())/1000%60).zfill(2), True, (0,0,0))
+    textRect = survivedtext.get_rect()
+    textRect.topright = [635, 5]
+    screen.blit(survivedtext, textRect)
 
-    player, grass, castle = (load_image(name) for name in ("dude.png", "grass.png", "castle.png"))
-    bullet_image, enemy_image = load_image("bullet.png"), load_image("badguy.png")
-    healthbar, health_image = load_image("healthbar.png"), load_image("health.png")
-    gameover, youwin = load_image("gameover.png"), load_image("youwin.png")
-    hit_sound, enemy_sound, shoot_sound = (load_sound(name) for name in ("explode.wav", "enemy.wav", "shoot.wav"))
-    for sound in (hit_sound, enemy_sound, shoot_sound):
-        if sound is not None:
-            sound.set_volume(0.05)
-    if pygame.mixer.get_init():
-        try:
-            pygame.mixer.music.load(RESOURCE_DIR / "moonlight.wav")
-            pygame.mixer.music.set_volume(0.25)
-            pygame.mixer.music.play(-1)
-        except pygame.error:
-            pass
+# 6.5 Draw healthbar
+    screen.blit(healthbar, (5, 5))
+    for health1 in range(healthvalue):
+        screen.blit(health, (health1 +8, 8))
 
-    player_pos = pygame.Vector2(100, 100)
-    bullets: list[Bullet] = []
-    enemies: list[Enemy] = [Enemy(WIDTH, 100)]
-    health = 194
-    shots = hits = spawn_counter = difficulty = 0
-    spawn_delay = 100
-    start_time = pygame.time.get_ticks()
-    result: bool | None = None
-
-    while result is None:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                direction = pygame.Vector2(pygame.mouse.get_pos()) - player_pos
-                bullets.append(Bullet(math.atan2(direction.y, direction.x), player_pos.x, player_pos.y))
-                shots += 1
-                play(shoot_sound)
-
-        pressed = pygame.key.get_pressed()
-        movement = pygame.Vector2(pressed[pygame.K_d] - pressed[pygame.K_a], pressed[pygame.K_s] - pressed[pygame.K_w])
-        if movement.length_squared():
-            player_pos += movement.normalize() * (300 / FPS)
-        player_pos.x = max(32, min(WIDTH - 32, player_pos.x))
-        player_pos.y = max(32, min(HEIGHT - 32, player_pos.y))
-
-        spawn_counter += 1
-        if spawn_counter >= spawn_delay:
-            enemies.append(Enemy(WIDTH, random.randint(50, 430)))
-            spawn_counter, difficulty = 0, min(difficulty + 5, 35)
-            spawn_delay = max(20, 100 - difficulty * 2)
-
-        for bullet in bullets:
-            bullet.update()
-        bullets = [bullet for bullet in bullets if not bullet.off_screen]
-        surviving_enemies: list[Enemy] = []
-        for enemy in enemies:
-            enemy.update()
-            enemy_rect = enemy_image.get_rect(topleft=(enemy.x, enemy.y))
-            if enemy.x < 64:
-                health -= random.randint(5, 20)
-                play(hit_sound)
-                continue
-            collision = next((bullet for bullet in bullets if enemy_rect.colliderect(bullet_image.get_rect(topleft=(bullet.x, bullet.y)))), None)
-            if collision:
-                bullets.remove(collision)
-                hits += 1
-                play(enemy_sound)
-            elif enemy.x >= -64:
-                surviving_enemies.append(enemy)
-        enemies = surviving_enemies
-
-        elapsed = pygame.time.get_ticks() - start_time
-        result = True if elapsed >= GAME_LENGTH_MS else False if health <= 0 else None
-        if result is not None:
-            break
-
-        screen.fill((0, 0, 0))
-        for x in range(0, WIDTH, grass.get_width()):
-            for y in range(0, HEIGHT, grass.get_height()):
-                screen.blit(grass, (x, y))
-        for y in (30, 135, 240, 345):
-            screen.blit(castle, (0, y))
-        for enemy in enemies:
-            screen.blit(enemy_image, (enemy.x, enemy.y))
-        for bullet in bullets:
-            screen.blit(pygame.transform.rotate(bullet_image, -math.degrees(bullet.angle)), (bullet.x, bullet.y))
-        aim = pygame.Vector2(pygame.mouse.get_pos()) - player_pos
-        rotated_player = pygame.transform.rotate(player, -math.degrees(math.atan2(aim.y, aim.x)))
-        screen.blit(rotated_player, rotated_player.get_rect(center=player_pos))
-        screen.blit(healthbar, (5, 5))
-        for offset in range(max(0, health)):
-            screen.blit(health_image, (offset + 8, 8))
-        remaining = max(0, (GAME_LENGTH_MS - elapsed) // 1000)
-        timer = font.render(f"{remaining // 60}:{remaining % 60:02d}", True, (0, 0, 0))
-        screen.blit(timer, timer.get_rect(topright=(635, 5)))
-        pygame.display.flip()
-
-    accuracy = 100 * hits / shots if shots else 0
-    screen.blit(youwin if result else gameover, (0, 0))
-    color = (0, 255, 0) if result else (255, 0, 0)
-    text = font.render(f"Accuracy: {accuracy:.1f}%", True, color)
-    screen.blit(text, text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 24)))
+    # 7 update the screen
     pygame.display.flip()
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-                pygame.quit()
-                return
-        clock.tick(FPS)
 
+    # 8 loop throug the events
+    for event in pygame.event.get():
+        # check if the event is the X button
+        if event.type == pygame.QUIT:
+            # if it is quit the game
+            pygame.quit()
+            exit(0)
+        if event.type == pygame.KEYDOWN:
+            if event.key == K_w:
+                #print "UP True" # debug
+                keys[0] = True
+            elif event.key == K_a:
+                #print "LEFT True" # debug
+                keys[1] = True
+            elif event.key==K_s:
+                #print " True" # debug
+                keys[2] = True
+            elif event.key == K_d:
+                #print "RIGHT True" #debug
+                keys[3] = True
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_w:
+                #print "UP False" # debug
+                keys[0] = False
+            elif event.key == pygame.K_a:
+                #print "LEFT False" #debug
+                keys[1] = False
+            elif event.key == pygame.K_s:
+                #print "DOWN False" #debug
+                keys[2] = False
+            elif event.key == pygame.K_d:
+                #print "RIGHT False" # debug
+                keys[3] = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            shoot.play()
+            position = pygame.mouse.get_pos()
+            acc[1] += 1
+            arrows.append([math.atan2(position[1]-(playerpos1[1]+32),position[0]-(playerpos1[0]+26)),playerpos1[0]+32,playerpos1[1]+32])
 
-if __name__ == "__main__":
-    main()
+        # 9 - Move player
+        if keys[0]:
+            playerpos[1]-=5
+        elif keys[2]:
+            playerpos[1]+=5
+        if keys[1]:
+            playerpos[0]-=5
+        elif keys[3]:
+            playerpos[0]+=5
+        #print pygame.key.get_pressed() # debug
+        #print pygame.key.get_focused() # debug
+            #10 - Win/Lose check
+    if pygame.time.get_ticks() >= 90000:
+        running = 0
+        exitcode = 1
+    if healthvalue <= 0:
+        running = 0
+        exitcode = 0
+    if acc[1] != 0:
+        accuracy=acc[0] * 1.0 / acc[1] * 100
+    else:
+        accuracy = 0
+# 11 - Win/lose display
+if exitcode == 0:
+    pygame.font.init()
+    font = pygame.font.Font(None, 24)
+    text = font.render("Accuracy: "+str(accuracy)+"%", True, (255,0,0))
+    textRect = text.get_rect()
+    textRect.centerx = screen.get_rect().centerx
+    textRect.centery = screen.get_rect().centery+24
+    screen.blit(gameover, (0,0))
+    screen.blit(text, textRect)
+else:
+    pygame.font.init()
+    font = pygame.font.Font(None, 24)
+    text = font.render("Accuracy: "+str(accuracy)+"%", True, (0,255,0))
+    textRect = text.get_rect()
+    textRect.centerx = screen.get_rect().centerx
+    textRect.centery = screen.get_rect().centery+24
+    screen.blit(youwin, (0,0))
+    screen.blit(text, textRect)
+while 1:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit(0)
+    pygame.display.flip()
