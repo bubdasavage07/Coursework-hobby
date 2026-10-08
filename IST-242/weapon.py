@@ -35,4 +35,4 @@ class Weapon:
             
 #wep1 = Weapon()
 #print(wep1.weaponName)
-#print(wep1.weaponDMG)l
+#print(wep1.weaponDMG)
