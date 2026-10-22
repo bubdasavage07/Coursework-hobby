@@ -1,8 +1,7 @@
 #With weapon selection and damage
 
 # 1. Import libraries
-import pygame, sys, math, random
-from pathlib import Path
+import pygame, sys, math, os, random
 from pygame.locals import *
 
 # 2. Initialize the game
@@ -26,23 +25,23 @@ class PlayerState:
 class WeaponSystem:
     def __init__(self):
         self.weapons = [
-            {"name": "arrow", "damage": 5, "cooldown": 20, "img": "bullet.png"},
-            {"name": "rusty knife", "damage": 12, "cooldown": 15},
+            {"name": "arrow", "damage": 5, "cooldown": 20, "img": "/resources/images/bullet.png"},
+            {"name": "rusty knife", "damage": 12, "cooldown": 15, "img": "/resources/images/rustyknife.png"},
             {"name": "lead pipe", "damage": 20, "cooldown": 25},
             {"name": "bat", "damage": 30, "cooldown": 30},
             {"name": "pistol", "damage": 50, "cooldown": 10},
-            {"name": "fnuke", "damage": 100, "cooldown": 60}
+            {"name": "fnuke", "damage": 100, "cooldown": 60, "img": "/resources/images/fnuke.png"}
         ]
         self.current_weapon_idx = 0
 
     def get_current_weapon(self):
         return self.weapons[self.current_weapon_idx]
 
-    def load_current_weapon_image(self, images_dir):
+    def load_current_weapon_image(self, cwd):
         weapon = self.get_current_weapon()
-        # Weapons without their own sprite use the standard projectile.
-        image_name = weapon.get("img", "bullet.png")
-        return pygame.image.load(images_dir / image_name)
+        # Fallback to a default image if 'img' key is missing
+        img_rel_path = weapon.get("img", "/resources/images/bullet.png")
+        return pygame.image.load(cwd + img_rel_path)
 
 p1 = PlayerState()
 weapon_system = WeaponSystem()
@@ -59,33 +58,30 @@ badtimer = 100
 badtimer1 = 0
 badguys = [[640, 100]]
 
-# Assets belong to the original game project next to this script.  Deriving the
-# path from __file__ makes launching from the repository root (or any folder)
-# reliable.
-ASSET_DIR = Path(__file__).resolve().parent / "pythongametest" / "resources"
-IMAGES_DIR = ASSET_DIR / "images"
-AUDIO_DIR = ASSET_DIR / "audio"
+# Get path to images
+cwd = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pythongametest").replace('\\', '/')
 
 # 3. Load player images and assets
-player_img = pygame.image.load(IMAGES_DIR / "dude.png")
-grass = pygame.image.load(IMAGES_DIR / "grass.png")
-castle = pygame.image.load(IMAGES_DIR / "castle.png")
-arrow = weapon_system.load_current_weapon_image(IMAGES_DIR)
-badguyimg1 = pygame.image.load(IMAGES_DIR / "badguy.png")
+player_img = pygame.image.load(cwd + "/resources/images/dude.png")
+grass = pygame.image.load(cwd + "/resources/images/grass.png")
+castle = pygame.image.load(cwd + "/resources/images/castle.png")
+# arrow = pygame.image.load(cwd + "/resources/images/bullet.png")
+arrow = weapon_system.load_current_weapon_image(cwd)
+badguyimg1 = pygame.image.load(cwd + "/resources/images/badguy.png")
 badguyimg = badguyimg1
-healthbar = pygame.image.load(IMAGES_DIR / "healthbar.png")
-health = pygame.image.load(IMAGES_DIR / "health.png")
-gameover = pygame.image.load(IMAGES_DIR / "gameover.png")
-youwin = pygame.image.load(IMAGES_DIR / "youwin.png")
+healthbar = pygame.image.load(cwd + "/resources/images/healthbar.png")
+health = pygame.image.load(cwd + "/resources/images/health.png")
+gameover = pygame.image.load(cwd + "/resources/images/gameover.png")
+youwin = pygame.image.load(cwd + "/resources/images/youwin.png")
 
 # 3.1 Load audio
-hit = pygame.mixer.Sound(AUDIO_DIR / "explode.wav")
-enemy = pygame.mixer.Sound(AUDIO_DIR / "enemy.wav")
-shoot = pygame.mixer.Sound(AUDIO_DIR / "shoot.wav")
+hit = pygame.mixer.Sound(cwd + "/resources/audio/explode.wav")
+enemy = pygame.mixer.Sound(cwd + "/resources/audio/enemy.wav")
+shoot = pygame.mixer.Sound(cwd + "/resources/audio/shoot.wav")
 hit.set_volume(0.05)
 shoot.set_volume(0.05)
 enemy.set_volume(0.05)
-pygame.mixer.music.load(AUDIO_DIR / "moonlight.wav")
+pygame.mixer.music.load(cwd + "/resources/audio/moonlight.wav")
 pygame.mixer.music.play(-1, 0.0)
 pygame.mixer.music.set_volume(0.25)
 
@@ -250,7 +246,7 @@ while running:
                 if rect.collidepoint(mouse_pos):
                     weapon_system.current_weapon_idx = idx
                     # Reload the projectile image dynamically when switching weapons!
-                    arrow = weapon_system.load_current_weapon_image(IMAGES_DIR)
+                    arrow = weapon_system.load_current_weapon_image(cwd)
                     clicked_ui = True
                     break
             
