@@ -4,7 +4,7 @@ import os
 
 
 # Put the text file in the same folder as this program.
-file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "random_words.txt")
+file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "words.txt")
 
 if os.path.exists(file_path):
     with open(file_path, "r", encoding="utf-8") as word_file:
